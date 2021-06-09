@@ -1,0 +1,49 @@
+#########################################################################
+#################  nezha-d1 使用指南  #########################################
+#########################################################################
+
+1. 烧写固件：nezha-d1/tina-d1-open/tina_d1-nezha_uart0.img
+- 烧写参考链接：https://d1.docs.allwinnertech.com/study/study_4compile/
+- 说明：tina_d1-nezha_uart0.img固件更改了启动流程，uboot阶段增加了引导TF中opensbi、kernel、rootfs等文件的功能。
+
+2. 编译社区源码（opensbi，kernel-5.13） 
+- 创建临时文件目录
+  -- mkdir build
+- 准备交叉工具链
+  -- tar xvf opensource/tools/riscv64-glibc-gcc-thead_20200702.tar.xz -C build/
+- 编译linux固件
+  -- 解压：tar xzvf opensource/linux/linux-5.13-rc3.tar.gz  -C build/
+  -- 打补丁
+     --- 进入linux目录：cd nezha-d1/build/linux-5.13-rc3
+     --- 生成git仓库：git init; git add ./; git commit -s -m "init version"
+     --- 打补丁：git am *.patch,
+  -- 编译
+     --- make ARCH=riscv CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu- d1_nezha_defconfig 
+     --- make ARCH=riscv CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu- all -j32
+
+- 编译opensbi固件
+  -- 解压：unzip opensource/opensbi/opensbi-master.zip -d build/ 
+  -- 编译：make PLATFORM=generic CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu-
+- 准备文件系统
+  -- 解压：tar -xzvf opensource/rootfs/rootfs.tar.gz -C build/
+  -- cpio格式： find . | fakeroot cpio -o -Hnewc | gzip > ../rootfs.cpio.gz
+
+3. 运行
+- 方式1：卡单独分区，PC端拷贝opensbi、Image、dtb、rootfs.tar.gz文件到卡
+  -- 拷贝opensbi固件（fw_dynamic.elf）到sd卡
+  -- 拷贝linux固件（Image），dtb到sd卡（d1_nezha.dtb）
+  -- 拷贝rootfs.cpio.gz镜像到sd卡
+  -- 开发板插入sd卡后，上电重新启动。
+
+- 方式2：TF卡建立GPT分区，分区1：FAT文件系统，存放opensbi、kernel、dtb的固件，分区2：EXT4根文件系统
+  -- 利用make_ext4fs工具制作EXT4根文件系统，工具位置：nezha-d1/opensource/tools，举例：make_ext4fs -l 256M roofs.ext4 rootfs/
+  -- 制作GPT分区，使用parted工具进行分区，举例：分区1 - 1G到12G 区间，分区2 - 12G至25G区间 
+     --- parted -s /dev/sdb mklabel gpt
+     --- parted -s /dev/sdb unit GB mkpart primary 1 12
+     --- parted -s /dev/sdb unit GB mkpart primary 12 25
+     --- parted -s /dev/sdb print 
+     --- 利用mkfs.fat格式化分区1为fat文件系统，举例：mkfs.fat /dev/sdb1
+     --- 将roofs.ext4根文件系统写到分区2 ，举例：dd if=./build/rootfs.ext4 of=/dev/sdb2
+
+
+

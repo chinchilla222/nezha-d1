@@ -1,2 +1,2 @@
 # nezha-d1
-build mainline SBI and Linux for allwinner D1 nezha board
+Based on this repository, developers can quickly and easily build the latest community kernel and SBI firmware NEZHA development board.
