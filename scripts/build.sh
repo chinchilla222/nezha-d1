@@ -48,12 +48,14 @@ fi
 echo "NEZHA_CROSS_COMPILE:"${NEZHA_CROSS_COMPILE}
 
 #compile linux
+if [ ! -f ${NEZHA_SOURCE_KERNEL_PATH}/${NEZHA_LINUX_VERSION}.tar.gz ]; then
+	wget https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/snapshot/${NEZHA_LINUX_VERSION}.tar.gz -P ${NEZHA_SOURCE_KERNEL_PATH}/
+fi 
+
 if [ ! -d ${NEZHA_BUILD_KERNEL_PATH} ] ; then
 	tar xzvf ${NEZHA_SOURCE_KERNEL_PATH}/${NEZHA_LINUX_VERSION}.tar.gz  -C ${NEZHA_BUILD_PATH}
 	cd ${NEZHA_BUILD_KERNEL_PATH}
-	git init
-	git add ./
-	git commit -s -m "init version"
+	git init; git add ./; git commit -s -m "init version"
 	#apply patch
 	git am ${NEZHA_SOURCE_KERNEL_PATH}/*.patch
 		
