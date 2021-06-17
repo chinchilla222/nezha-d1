@@ -1,0 +1,47 @@
+From 413c909f029f6b3e49290873d320fe8244958e0c Mon Sep 17 00:00:00 2001
+From: liush <liush@allwinnertech.com>
+Date: Thu, 17 Jun 2021 11:41:10 +0800
+Subject: [PATCH 06/11] dt-bindings: pinctrl: sunxi: Add D1 pinctrl bindings
+
+Add device tree binding Documentation details for D1 pinctrl
+driver.
+
+Signed-off-by: liush <liush@allwinnertech.com>
+---
+ .../bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml       | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml
+index cce63c3..5d99947 100644
+--- a/Documentation/devicetree/bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml
+@@ -46,6 +46,7 @@ properties:
+       - allwinner,sun8i-v3s-pinctrl
+       - allwinner,sun9i-a80-pinctrl
+       - allwinner,sun9i-a80-r-pinctrl
++      - allwinner,sun20i-d1-pinctrl
+       - allwinner,sun50i-a64-pinctrl
+       - allwinner,sun50i-a64-r-pinctrl
+       - allwinner,sun50i-a100-pinctrl
+@@ -174,6 +175,18 @@ allOf:
+       properties:
+         compatible:
+           enum:
++            - allwinner,sun20i-d1-pinctrl
++
++    then:
++      properties:
++        interrupts:
++          minItems: 6
++          maxItems: 6
++
++  - if:
++      properties:
++        compatible:
++          enum:
+             - allwinner,sun9i-a80-pinctrl
+ 
+     then:
+-- 
+2.7.4
+

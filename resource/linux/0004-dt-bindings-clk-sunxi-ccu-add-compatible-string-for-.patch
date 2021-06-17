@@ -1,0 +1,45 @@
+From c3453eb5c87cdad17e5835ab1f18f807dfb0684d Mon Sep 17 00:00:00 2001
+From: liush <liush@allwinnertech.com>
+Date: Thu, 17 Jun 2021 11:19:11 +0800
+Subject: [PATCH 04/11] dt-bindings: clk: sunxi-ccu: add compatible string for
+ D1 CCU and R-CCU
+
+This patch adds binding to d1's ccu clock and r-ccu clock.
+
+Signed-off-by: liush <liush@allwinnertech.com>
+---
+ Documentation/devicetree/bindings/clock/allwinner,sun4i-a10-ccu.yaml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/clock/allwinner,sun4i-a10-ccu.yaml b/Documentation/devicetree/bindings/clock/allwinner,sun4i-a10-ccu.yaml
+index a27025c..2d1df71 100644
+--- a/Documentation/devicetree/bindings/clock/allwinner,sun4i-a10-ccu.yaml
++++ b/Documentation/devicetree/bindings/clock/allwinner,sun4i-a10-ccu.yaml
+@@ -34,6 +34,8 @@ properties:
+       - allwinner,sun8i-v3-ccu
+       - allwinner,sun8i-v3s-ccu
+       - allwinner,sun9i-a80-ccu
++      - allwinner,sun20i-d1-ccu
++      - allwinner,sun20i-d1-r-ccu
+       - allwinner,sun50i-a64-ccu
+       - allwinner,sun50i-a64-r-ccu
+       - allwinner,sun50i-a100-ccu
+@@ -81,6 +83,7 @@ if:
+       enum:
+         - allwinner,sun8i-a83t-r-ccu
+         - allwinner,sun8i-h3-r-ccu
++        - allwinner,sun20i-d1-r-ccu
+         - allwinner,sun50i-a64-r-ccu
+         - allwinner,sun50i-a100-r-ccu
+         - allwinner,sun50i-h6-r-ccu
+@@ -101,6 +104,7 @@ else:
+     properties:
+       compatible:
+         enum:
++          - allwinner,sun20i-d1-ccu
+           - allwinner,sun50i-a100-ccu
+           - allwinner,sun50i-h6-ccu
+           - allwinner,sun50i-h616-ccu
+-- 
+2.7.4
+

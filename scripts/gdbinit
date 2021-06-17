@@ -10,7 +10,7 @@ set $dyn_info_addr  = $rootfs_addr - 0x40
 restore build/debug/Image binary $vmlinux_addr
 #restore out/image/rootfs_rv64.cpio.gz binary $rootfs_addr
 restore build/debug/rootfs.cpio.gz binary $rootfs_addr
-restore build/debug/d1_nezha.dtb binary $dtb_addr
+restore build/debug/d1.dtb binary $dtb_addr
 restore build/debug/fw_dynamic.bin binary $opensbi_addr
 
 # Prepare fw_dynamic params

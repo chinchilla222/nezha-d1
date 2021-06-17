@@ -1,0 +1,84 @@
+From 2a05e26c5e5cd28001af5863003df0e62cde2aa0 Mon Sep 17 00:00:00 2001
+From: Guo Ren <guoren@linux.alibaba.com>
+Date: Wed, 19 May 2021 05:04:14 +0000
+Subject: [PATCH 01/11] riscv: pgtable.h: Fixup _PAGE_CHG_MASK usage
+
+'& _PAGE_CHG_MASK' should masks all attributes BITS then
+'>> _PAGE_PFN_SHIFT' get the final correct PFN value.
+
+'& _PAGE_CHG_MASK' makes the code semantics more accurate.
+
+Signed-off-by: Guo Ren <guoren@linux.alibaba.com>
+Cc: Anup Patel <anup.patel@wdc.com>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: Drew Fustini <drew@beagleboard.org>
+Cc: Palmer Dabbelt <palmerdabbelt@google.com>
+Cc: Wei Fu <wefu@redhat.com>
+Cc: Wei Wu <lazyparser@gmail.com>
+---
+ arch/riscv/include/asm/pgtable-64.h | 8 +++++---
+ arch/riscv/include/asm/pgtable.h    | 6 +++---
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/arch/riscv/include/asm/pgtable-64.h b/arch/riscv/include/asm/pgtable-64.h
+index f3b0da6..cbf9acf 100644
+--- a/arch/riscv/include/asm/pgtable-64.h
++++ b/arch/riscv/include/asm/pgtable-64.h
+@@ -62,12 +62,14 @@ static inline void pud_clear(pud_t *pudp)
+ 
+ static inline unsigned long pud_page_vaddr(pud_t pud)
+ {
+-	return (unsigned long)pfn_to_virt(pud_val(pud) >> _PAGE_PFN_SHIFT);
++	return (unsigned long)pfn_to_virt(
++		(pud_val(pud) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT);
+ }
+ 
+ static inline struct page *pud_page(pud_t pud)
+ {
+-	return pfn_to_page(pud_val(pud) >> _PAGE_PFN_SHIFT);
++	return pfn_to_page(
++		(pud_val(pud) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT);
+ }
+ 
+ static inline pmd_t pfn_pmd(unsigned long pfn, pgprot_t prot)
+@@ -77,7 +79,7 @@ static inline pmd_t pfn_pmd(unsigned long pfn, pgprot_t prot)
+ 
+ static inline unsigned long _pmd_pfn(pmd_t pmd)
+ {
+-	return pmd_val(pmd) >> _PAGE_PFN_SHIFT;
++	return (pmd_val(pmd) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT;
+ }
+ 
+ #define pmd_ERROR(e) \
+diff --git a/arch/riscv/include/asm/pgtable.h b/arch/riscv/include/asm/pgtable.h
+index 9469f46..869d6bf 100644
+--- a/arch/riscv/include/asm/pgtable.h
++++ b/arch/riscv/include/asm/pgtable.h
+@@ -216,12 +216,12 @@ static inline unsigned long _pgd_pfn(pgd_t pgd)
+ 
+ static inline struct page *pmd_page(pmd_t pmd)
+ {
+-	return pfn_to_page(pmd_val(pmd) >> _PAGE_PFN_SHIFT);
++	return pfn_to_page((pmd_val(pmd) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT);
+ }
+ 
+ static inline unsigned long pmd_page_vaddr(pmd_t pmd)
+ {
+-	return (unsigned long)pfn_to_virt(pmd_val(pmd) >> _PAGE_PFN_SHIFT);
++	return (unsigned long)pfn_to_virt((pmd_val(pmd) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT);
+ }
+ 
+ static inline pte_t pmd_pte(pmd_t pmd)
+@@ -232,7 +232,7 @@ static inline pte_t pmd_pte(pmd_t pmd)
+ /* Yields the page frame number (PFN) of a page table entry */
+ static inline unsigned long pte_pfn(pte_t pte)
+ {
+-	return (pte_val(pte) >> _PAGE_PFN_SHIFT);
++	return ((pte_val(pte) & _PAGE_CHG_MASK) >> _PAGE_PFN_SHIFT);
+ }
+ 
+ #define pte_page(x)     pfn_to_page(pte_pfn(x))
+-- 
+2.7.4
+

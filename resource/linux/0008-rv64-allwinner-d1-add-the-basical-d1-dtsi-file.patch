@@ -1,0 +1,196 @@
+From 3c62d1083dd13b10ed6045027b6b245091cb691d Mon Sep 17 00:00:00 2001
+From: liush <liush@allwinnertech.com>
+Date: Wed, 16 Jun 2021 14:41:37 +0800
+Subject: [PATCH 08/11] rv64: allwinner: d1: add the basical d1 dtsi file
+
+Allwinner D1 is a new SoC with RISC-V cores, this commit adds the
+basical dtsi file of it, including the clock, pins, and UART support.
+
+Signed-off-by: liush <liush@allwinnertech.com>
+---
+ arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi | 173 +++++++++++++++++++++++++++
+ 1 file changed, 173 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
+
+diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi b/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
+new file mode 100644
+index 0000000..ca42838
+--- /dev/null
++++ b/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
+@@ -0,0 +1,173 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2021 Liu Shaohua <liush@allwinnertech.com>
++ *
++ * Based on: T-HEAD dts file
++ *
++ */
++#include <dt-bindings/clock/sun20i-d1-ccu.h>
++#include <dt-bindings/reset/sun20i-d1-ccu.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		timebase-frequency = <2400000>;
++		cpu@0 {
++			device_type = "cpu";
++			reg = <0>;
++			status = "okay";
++			compatible = "riscv";
++			riscv,isa = "rv64imafdcv";
++			mmu-type = "riscv,sv39";
++			cpu0_intc: interrupt-controller {
++				#interrupt-cells = <1>;
++				compatible = "riscv,cpu-intc";
++				interrupt-controller;
++			};
++		};
++	};
++
++	dcxo24M: dcxo24M_clk {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <24000000>;
++		clock-output-names = "dcxo24M";
++	};
++
++	iosc: internal-osc-clk {
++		compatible = "fixed-clock";
++		clock-frequency = <16000000>;
++		clock-accuracy = <300000000>;
++		clock-output-names = "iosc";
++		#clock-cells = <0>;
++	};
++
++	osc32k: osc32k-clk {
++		compatible = "fixed-clock";
++		clock-frequency = <32768>;
++		clock-output-names = "osc32k";
++		#clock-cells = <0>;
++	};
++
++	soc {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		compatible = "simple-bus";
++		ranges;
++
++
++		reset: reset-sample {
++			compatible = "thead,reset-sample";
++			plic-delegate = <0x0 0x101ffffc>;
++		};
++
++		clint0: clint@ffdc000000 {
++			compatible = "riscv,clint0";
++			interrupts-extended = <
++				&cpu0_intc  3 &cpu0_intc  7
++				>;
++			reg = <0x0 0x14000000 0x0 0x04000000>;
++			clint,has-no-64bit-mmio;
++		};
++
++		intc: interrupt-controller@ffd8000000 {
++			#interrupt-cells = <2>;
++			compatible = "riscv,plic0";
++			interrupt-controller;
++			interrupts-extended = <
++				&cpu0_intc  0xffffffff &cpu0_intc  9
++				>;
++			reg = <0x0 0x10000000 0x0 0x04000000>;
++			reg-names = "control";
++			riscv,max-priority = <7>;
++			riscv,ndev = <200>;
++		};
++
++		ccu: clock@2001000 {
++			compatible = "allwinner,sun20i-d1-ccu";
++			reg = <0x0 0x02001000 0x0 0x1000>;
++			clocks = <&dcxo24M>, <&osc32k>, <&iosc>;
++			clock-names = "hosc", "losc", "iosc";
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		r_ccu: clock@7010000 {
++			compatible = "allwinner,sun20i-d1-r-ccu";
++			reg = <0x0 0x07010000 0x0 0x240>;
++			clocks = <&dcxo24M>, <&osc32k>, <&iosc>,
++				 <&ccu CLK_PLL_PERIPH0>;
++			clock-names = "hosc", "losc", "iosc", "pll-periph0";
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		uart0:serial@2500000 {
++			compatible = "snps,dw-apb-uart";
++			reg = <0x0 0x02500000 0x0 0x400>;
++			interrupts-extended = <&intc 18 4>;
++			reg-shift = <2>;
++			reg-io-width = <4>;
++			clocks = <&dcxo24M>;
++			clock-names = "baudclk";
++		};
++
++		mmc0:mmc@4020000 {
++			compatible = "allwinner,sun50i-a100-emmc";
++			device_type = "sdc0";
++			reg = <0x0 0x04020000 0x0 0x1000>;
++			clocks = <&dcxo24M>,
++				<&ccu CLK_PLL_PERIPH0_2X>,
++				 <&ccu CLK_MMC0>,
++				 <&ccu CLK_BUS_MMC0>;
++			clock-names = "osc24m","pll_periph","mmc","ahb";
++			resets = <&ccu RST_BUS_MMC0>;
++			reset-names = "ahb";
++			interrupts-extended = <&intc 56 4>;
++			max-frequency = <50000000>;
++			cap-sd-highspeed;
++		};
++
++		pio: pinctrl@2000000 {
++			compatible = "allwinner,sun20i-d1-pinctrl";
++			reg = <0x0 0x02000000 0x0 0x500>;
++			interrupts-extended = <&intc 85 IRQ_TYPE_LEVEL_HIGH>,
++				     <&intc 87 IRQ_TYPE_LEVEL_HIGH>,
++				     <&intc 89 IRQ_TYPE_LEVEL_HIGH>,
++				     <&intc 91 IRQ_TYPE_LEVEL_HIGH>,
++				     <&intc 93 IRQ_TYPE_LEVEL_HIGH>,
++				     <&intc 95 IRQ_TYPE_LEVEL_HIGH>;
++			device_type = "pio";
++			clocks = <&ccu CLK_APB0>, <&dcxo24M>;
++			clock-names = "apb", "hosc";
++			gpio-controller;
++			#gpio-cells = <3>;
++			interrupt-controller;
++			#interrupt-cells = <3>;
++			#size-cells = <0>;
++
++			uart0_pins: uart0@0 {
++				pins = "PB8", "PB9";
++				function = "uart0";
++			};
++
++			mmc0_pins: mmc0@0 {
++				pins = "PF0", "PF1", "PF2",
++					"PF3", "PF4", "PF5";
++				function = "sdc0";
++				drive-strength = <40>;
++				bias-pull-up;
++				power-source = <3300>;
++			};
++
++		};
++
++	};
++
++};
+-- 
+2.7.4
+

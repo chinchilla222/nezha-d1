@@ -10,7 +10,7 @@ NEZHA_LINUX_VERSION=linux-5.13-rc3
 NEZHA_CROSS_COMPILE=gcc
 
 #source
-NEZHA_SOURCE_PATH=${WORK_NEZHA_PATH}/opensource
+NEZHA_SOURCE_PATH=${WORK_NEZHA_PATH}/resource
 NEZHA_SOURCE_KERNEL_PATH=${NEZHA_SOURCE_PATH}/linux
 NEZHA_SOURCE_SBI_PATH=${NEZHA_SOURCE_PATH}/opensbi
 NEZHA_SOURCE_TOOLS_PATH=${NEZHA_SOURCE_PATH}/tools/toolchain
@@ -77,7 +77,7 @@ if [ ! -f ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/Image ] ; then
 fi
 
 cp ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/Image ${NEZHA_DEBUG_PATH}
-cp ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/dts/sunxi/d1_nezha.dtb ${NEZHA_DEBUG_PATH}
+cp ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/dts/allwinner/*.dtb ${NEZHA_DEBUG_PATH}/d1.dtb
 
 #compile sbi
 if [ ! -d ${NEZHA_BUILD_SBI_PATH} ] ; then

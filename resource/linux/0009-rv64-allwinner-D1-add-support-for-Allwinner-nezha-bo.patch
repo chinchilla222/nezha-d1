@@ -1,0 +1,87 @@
+From c2df33510561b2620a0332ecedb04ac5a731ac25 Mon Sep 17 00:00:00 2001
+From: liush <liush@allwinnertech.com>
+Date: Wed, 16 Jun 2021 14:46:21 +0800
+Subject: [PATCH 09/11] rv64: allwinner: D1: add support for Allwinner nezha
+ board
+
+Signed-off-by: liush <liush@allwinnertech.com>
+---
+ arch/riscv/boot/dts/Makefile                       |  1 +
+ arch/riscv/boot/dts/allwinner/Makefile             |  2 +
+ .../dts/allwinner/sun20i-d1-allwinner-nezha.dts    | 44 ++++++++++++++++++++++
+ 3 files changed, 47 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/allwinner/Makefile
+ create mode 100644 arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
+
+diff --git a/arch/riscv/boot/dts/Makefile b/arch/riscv/boot/dts/Makefile
+index fe996b8..3e7b264 100644
+--- a/arch/riscv/boot/dts/Makefile
++++ b/arch/riscv/boot/dts/Makefile
+@@ -2,5 +2,6 @@
+ subdir-y += sifive
+ subdir-$(CONFIG_SOC_CANAAN_K210_DTB_BUILTIN) += canaan
+ subdir-y += microchip
++subdir-y += allwinner
+ 
+ obj-$(CONFIG_BUILTIN_DTB) := $(addsuffix /, $(subdir-y))
+diff --git a/arch/riscv/boot/dts/allwinner/Makefile b/arch/riscv/boot/dts/allwinner/Makefile
+new file mode 100644
+index 0000000..afe71b4
+--- /dev/null
++++ b/arch/riscv/boot/dts/allwinner/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_SOC_SUNXI) += sun20i-d1-allwinner-nezha.dtb
+diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts b/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
+new file mode 100644
+index 0000000..1d5fbdc
+--- /dev/null
++++ b/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
+@@ -0,0 +1,44 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++/*
++ * Copyright (c) 2021 Liu Shaohua <liush@allwinnertech.com>
++ */
++
++/dts-v1/;
++
++#include "sun20i-d1.dtsi"
++
++/{
++	model = "Allwinner D1-NEZHA";
++	compatible = "allwinner,d1-nezha";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x40200000 0x0 0x1f000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200n8 initcall_debug=1 clk_ignore_unused";
++		stdout-path = "serial0:115200n8";
++		linux,initrd-start = <0x44000000>;
++		linux,initrd-end = <0x54000000>;
++	};
++
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_HIGH>;
++	bus-width = <4>;
++	status = "okay";
++};
+-- 
+2.7.4
+
