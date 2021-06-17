@@ -13,7 +13,7 @@ NEZHA_CROSS_COMPILE=gcc
 NEZHA_SOURCE_PATH=${WORK_NEZHA_PATH}/resource
 NEZHA_SOURCE_KERNEL_PATH=${NEZHA_SOURCE_PATH}/linux
 NEZHA_SOURCE_SBI_PATH=${NEZHA_SOURCE_PATH}/opensbi
-NEZHA_SOURCE_TOOLS_PATH=${NEZHA_SOURCE_PATH}/tools/toolchain
+NEZHA_SOURCE_TOOLS_PATH=${NEZHA_SOURCE_PATH}/tools
 NEZHA_SOURCE_FS_PATH=${NEZHA_SOURCE_PATH}/rootfs
 
 #build
@@ -37,7 +37,7 @@ fi
 #prepare toolchains
 if [ ! -d ${NEZHA_BUILD_TOOLS_PATH} ] ; then
 	#tar xvf ${NEZHA_SOURCE_TOOLS_PATH}/${NEZHA_CROSS_COMPILE_PATH}.tar.xz -C ${NEZHA_BUILD_PATH}
-	cat ${NEZHA_SOURCE_TOOLS_PATH}/${NEZHA_CROSS_COMPILE_PATH}.tar.xz.* | tar xJ -C ${NEZHA_BUILD_PATH}
+	cat ${NEZHA_SOURCE_TOOLS_PATH}/toolchain/${NEZHA_CROSS_COMPILE_PATH}.tar.xz.* | tar xJ -C ${NEZHA_BUILD_PATH}
 fi
 
 NEZHA_CROSS_COMPILE=${NEZHA_BUILD_TOOLS_PATH}/riscv64-unknown-linux-gnu-
@@ -76,6 +76,8 @@ if [ ! -f ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/Image ] ; then
 	exit 1
 fi
 
+${NEZHA_SOURCE_TOOLS_PATH}/mkbootimg --kernel ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/Image --board sun20i_riscv --base 0x40200000 --kernel_offset 0  -o ${NEZHA_DEBUG_PATH}/boot.img
+
 cp ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/Image ${NEZHA_DEBUG_PATH}
 cp ${NEZHA_BUILD_KERNEL_PATH}/arch/riscv/boot/dts/allwinner/*.dtb ${NEZHA_DEBUG_PATH}/d1.dtb
 
@@ -94,7 +96,7 @@ fi
 
 cp ${NEZHA_BUILD_SBI_PATH}/build/platform/generic/firmware/fw_dynamic.bin ${NEZHA_DEBUG_PATH}
 
-# rootfs,gen cpio
+# rootfs,gen cpio,ext4
 
 if [ ! -d ${NEZHA_BUILD_FS_PATH} ] ; then
 	tar -xzvf ${NEZHA_SOURCE_FS_PATH}/rootfs.tar.gz -C ${NEZHA_BUILD_PATH}
@@ -105,3 +107,5 @@ echo "NEZHA_BUILD_FS_PATH"${NEZHA_BUILD_FS_PATH}
 cd ${NEZHA_BUILD_FS_PATH}
 find . | fakeroot cpio -o -Hnewc | gzip > ${NEZHA_DEBUG_PATH}/rootfs.cpio.gz
 
+cd ${NEZHA_DEBUG_PATH}
+${NEZHA_SOURCE_TOOLS_PATH}/make_ext4fs -l 1024M ${NEZHA_DEBUG_PATH}/roofs.ext4 ${NEZHA_BUILD_FS_PATH}/

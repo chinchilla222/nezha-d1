@@ -10,9 +10,9 @@
 - 创建临时文件目录
   -- mkdir build
 - 准备交叉工具链
-  -- tar xvf opensource/tools/riscv64-glibc-gcc-thead_20200702.tar.xz -C build/
+  -- tar xvf resource/tools/riscv64-glibc-gcc-thead_20200702.tar.xz -C build/
 - 编译linux固件
-  -- 解压：tar xzvf opensource/linux/linux-5.13-rc3.tar.gz  -C build/
+  -- 解压：tar xzvf resource/linux/linux-5.13-rc3.tar.gz  -C build/
   -- 打补丁
      --- 进入linux目录：cd nezha-d1/build/linux-5.13-rc3
      --- 生成git仓库：git init; git add ./; git commit -s -m "init version"
@@ -20,30 +20,27 @@
   -- 编译
      --- make ARCH=riscv CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu- d1_nezha_defconfig 
      --- make ARCH=riscv CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu- all -j32
-
+  -- 生成boot.img
+     --- ./mkbootimg --kernel Image --board sun20i_riscv --base 0x40200000 --kernel_offset 0  -o boot.img
 - 编译opensbi固件
-  -- 解压：unzip opensource/opensbi/opensbi-master.zip -d build/ 
+  -- 解压：unzip resource/opensbi/opensbi-master.zip -d build/ 
   -- 编译：make PLATFORM=generic CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu-
 - 准备文件系统
-  -- 解压：tar -xzvf opensource/rootfs/rootfs.tar.gz -C build/
+  -- 解压：tar -xzvf resource/rootfs/rootfs.tar.gz -C build/
   -- cpio格式： find . | fakeroot cpio -o -Hnewc | gzip > ../rootfs.cpio.gz
 
-3. 运行
-- 方式1：卡单独分区，PC端拷贝opensbi、Image、dtb、rootfs.tar.gz文件到卡
-  -- 拷贝opensbi固件（fw_dynamic.elf）到sd卡
-  -- 拷贝linux固件（Image），dtb到sd卡（d1_nezha.dtb）
-  -- 拷贝rootfs.cpio.gz镜像到sd卡
-  -- 开发板插入sd卡后，上电重新启动。
+3. 启动卡：TF卡建立GPT分区，分区1：FAT文件系统，存放opensbi(fw_dynamic.bin)、kernel(boot.img)、dtb(d1.dtb)的固件，分区2：EXT4根文件系统
+- 制作EXT4根文件系统，工具：make_ext4fs，举例：make_ext4fs -l 256M roofs.ext4 rootfs/
+- 制作GPT分区，工具：parted，举例：分区1 - 1G到12G 区间，分区2 - 12G至25G区间 
+  -- parted -s /dev/sdb mklabel gpt
+  -- parted -s /dev/sdb unit GB mkpart primary 1 12
+  -- parted -s /dev/sdb unit GB mkpart primary 12 25
+  -- parted -s /dev/sdb print 
+- 格式化分区1，工具：mkfs.fat，举例：mkfs.fat /dev/sdb1
+- 烧写分区2，工具：dd，举例：dd if=./build/rootfs.ext4 of=/dev/sdb2
 
-- 方式2：TF卡建立GPT分区，分区1：FAT文件系统，存放opensbi、kernel、dtb的固件，分区2：EXT4根文件系统
-  -- 利用make_ext4fs工具制作EXT4根文件系统，工具位置：nezha-d1/opensource/tools，举例：make_ext4fs -l 256M roofs.ext4 rootfs/
-  -- 制作GPT分区，使用parted工具进行分区，举例：分区1 - 1G到12G 区间，分区2 - 12G至25G区间 
-     --- parted -s /dev/sdb mklabel gpt
-     --- parted -s /dev/sdb unit GB mkpart primary 1 12
-     --- parted -s /dev/sdb unit GB mkpart primary 12 25
-     --- parted -s /dev/sdb print 
-     --- 利用mkfs.fat格式化分区1为fat文件系统，举例：mkfs.fat /dev/sdb1
-     --- 将roofs.ext4根文件系统写到分区2 ，举例：dd if=./build/rootfs.ext4 of=/dev/sdb2
-
+4. 工具目录
+- mkbootimg: resource/tools/mkbootimg
+- make_ext4fs: resource/tools/make_ext4fs
 
 
