@@ -1,0 +1,29 @@
+From 37582dfef0d6290c48b97186a36bf1ece738e7b7 Mon Sep 17 00:00:00 2001
+From: damon <chinchilla222@163.com>
+Date: Tue, 29 Jun 2021 11:25:25 +0800
+Subject: [PATCH 12/12] rv64: allwinner: d1: support card boot ext4 file system
+
+Signed-off-by: damon <chinchilla222@163.com>
+---
+ arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts b/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
+index 1d5fbdc..c900ac9 100644
+--- a/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
++++ b/arch/riscv/boot/dts/allwinner/sun20i-d1-allwinner-nezha.dts
+@@ -21,10 +21,8 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200n8 initcall_debug=1 clk_ignore_unused";
++		bootargs = "console=ttyS0,115200n8 initcall_debug=1 clk_ignore_unused root=/dev/mmcblk0p2 rootwait init=/sbin/init";
+ 		stdout-path = "serial0:115200n8";
+-		linux,initrd-start = <0x44000000>;
+-		linux,initrd-end = <0x54000000>;
+ 	};
+ 
+ };
+-- 
+2.7.4
+
