@@ -1,17 +1,20 @@
 #########################################################################
-#################  nezha-d1 使用指南  #########################################
+#################  nezha-d1 使用指南  ###################################
 #########################################################################
 
 1. 烧写固件：nezha-d1/tina-d1-open/tina_d1-nezha_uart0.img
 - 烧写参考链接：https://d1.docs.allwinnertech.com/study/study_4compile/
 - 说明：tina_d1-nezha_uart0.img固件更改了启动流程，uboot阶段增加了引导TF中opensbi、kernel、rootfs等文件的功能。
 
-2. 编译社区源码（opensbi，kernel-5.13） 
-- 创建临时文件目录
+2. 脚本编译
+- 执行scripts/build.sh脚本，目标文件自动输出至build/debug目录
+
+3. 手动编译
+- 创建临时目录
   -- mkdir build
-- 准备交叉工具链
+- 准备工具链
   -- tar xvf resource/tools/riscv64-glibc-gcc-thead_20200702.tar.xz -C build/
-- 编译linux固件
+- 编译linux
   -- 解压：tar xzvf resource/linux/linux-5.13-rc3.tar.gz  -C build/
   -- 打补丁
      --- 进入linux目录：cd nezha-d1/build/linux-5.13-rc3
@@ -22,14 +25,14 @@
      --- make ARCH=riscv CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu- all -j32
   -- 生成boot.img
      --- ./mkbootimg --kernel Image --board sun20i_riscv --base 0x40200000 --kernel_offset 0  -o boot.img
-- 编译opensbi固件
+- 编译opensbi
   -- 解压：unzip resource/opensbi/opensbi-master.zip -d build/ 
   -- 编译：make PLATFORM=generic CROSS_COMPILE=../riscv64-glibc-gcc-thead_20200702/bin/riscv64-unknown-linux-gnu-
 - 准备文件系统
   -- 解压：tar -xzvf resource/rootfs/rootfs.tar.gz -C build/
   -- cpio格式： find . | fakeroot cpio -o -Hnewc | gzip > ../rootfs.cpio.gz
 
-3. 启动卡：TF卡建立GPT分区，分区1：FAT文件系统，存放opensbi(fw_dynamic.bin)、kernel(boot.img)、dtb(d1.dtb)的固件，分区2：EXT4根文件系统
+4. 制作启动卡：TF卡建立GPT分区，分区1：FAT文件系统，存放opensbi(fw_dynamic.bin)、kernel(boot.img)、dtb(d1.dtb)的固件，分区2：EXT4根文件系统
 - 制作EXT4根文件系统，工具：make_ext4fs，举例：make_ext4fs -l 256M roofs.ext4 rootfs/
 - 制作GPT分区，工具：parted，举例：分区1 - 1G到12G 区间，分区2 - 12G至25G区间 
   -- parted -s /dev/sdb mklabel gpt
@@ -39,7 +42,7 @@
 - 格式化分区1，工具：mkfs.fat，举例：mkfs.fat /dev/sdb1
 - 烧写分区2，工具：dd，举例：dd if=./build/rootfs.ext4 of=/dev/sdb2
 
-4. 工具目录
+5. 工具目录
 - mkbootimg: resource/tools/mkbootimg
 - make_ext4fs: resource/tools/make_ext4fs
 

@@ -1,0 +1,132 @@
+From e504fae4f3c1584ea4a75a1e59ad4fb5dc5fb4ec Mon Sep 17 00:00:00 2001
+From: liush <liush@allwinnertech.com>
+Date: Wed, 30 Jun 2021 09:06:44 +0800
+Subject: [PATCH] uboot: nezha: suport boot0->uboot->opensbi->kernel startup
+ chain
+
+Signed-off-by: liush <liush@allwinnertech.com>
+Change-Id: Icf0f188c2c236fc90f03d4731b92bf870c1d1277
+---
+ arch/riscv/lib/bootm.c    | 29 ++++++++++++++++++++++++++---
+ include/private_opensbi.h | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 65 insertions(+), 3 deletions(-)
+ create mode 100644 include/private_opensbi.h
+
+diff --git a/arch/riscv/lib/bootm.c b/arch/riscv/lib/bootm.c
+index 43ee7dc..169b80e 100644
+--- a/arch/riscv/lib/bootm.c
++++ b/arch/riscv/lib/bootm.c
+@@ -19,6 +19,7 @@
+ #include <dm/device.h>
+ #include <dm/root.h>
+ #include <u-boot/zlib.h>
++#include <private_opensbi.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -27,6 +28,16 @@ __weak void board_quiesce_devices(void)
+ {
+ }
+ 
++void  boot_jmp_opensbi(ulong opensbi_addr, u32 core_id, ulong dtb_addr,
++					struct fw_dynamic_info *opensbi_info)
++{
++		asm volatile ("mv s1, %0" :: "r" (opensbi_addr) : "memory");
++		asm volatile ("mv a0, %0" :: "r" (core_id) : "memory");
++		asm volatile ("mv a1, %0" :: "r" (dtb_addr) : "memory");
++		asm volatile ("mv a2, %0" :: "r" (opensbi_info) : "memory");
++		asm volatile ("jr s1");
++}
++
+ /**
+  * announce_and_cleanup() - Print message and prepare for kernel boot
+  *
+@@ -84,7 +95,8 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ 	int ret;
+ #endif
+ 	unsigned long r2;
+-
++	unsigned long opensbi_run_addr = env_get_hex("opensbi_run_addr", 0);
++	struct fw_dynamic_info opensbi_info;
+ 	kernel = (void (*)(ulong, void *))images->ep;
+ 
+ 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
+@@ -104,7 +116,8 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ 			}
+ 		}
+ #endif
+-		memcpy((void *)r2, images->ft_addr, images->ft_len);
++		if (!opensbi_run_addr) {
++			memcpy((void *)r2, images->ft_addr, images->ft_len);
+ #ifdef CONFIG_SMP
+ 			ret = smp_call_function(images->ep,
+ 						(ulong)images->ft_addr, 0, 0);
+@@ -113,9 +126,19 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ #endif
+ 			debug("## Linux machid: %08lx, FDT addr: %08lx\n", gd->arch.boot_hart, (ulong)images->ft_addr);
+ 			kernel(gd->arch.boot_hart, (void *)r2);
++		} else {
++			printf("start opensbi\n");
++			opensbi_info.magic = FW_DYNAMIC_INFO_MAGIC_VALUE;
++			opensbi_info.version = 0x1;
++			opensbi_info.next_addr = images->ep;
++			opensbi_info.next_mode = FW_DYNAMIC_INFO_NEXT_MODE_S;
++			opensbi_info.options = 0;
++			opensbi_info.boot_hart = 0;
++
++			boot_jmp_opensbi(opensbi_run_addr, gd->arch.boot_hart, r2, &opensbi_info);
+ 		}
+ 	}
+-
++	}
+ }
+ 
+ #else
+diff --git a/include/private_opensbi.h b/include/private_opensbi.h
+new file mode 100644
+index 0000000..293dcdc
+--- /dev/null
++++ b/include/private_opensbi.h
+@@ -0,0 +1,39 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++#ifndef __OPENSBI_H
++#define __OPENSBI_H
++
++#define FW_DYNAMIC_INFO_MAGIC_VALUE 0x4942534f
++#define FW_DYNAMIC_INFO_NEXT_MODE_S 0x1
++
++/** Representation dynamic info passed by previous booting stage */
++struct fw_dynamic_info {
++	/** Info magic */
++	unsigned long magic;
++	/** Info version */
++	unsigned long version;
++	/** Next booting stage address */
++	unsigned long next_addr;
++	/** Next booting stage mode */
++	unsigned long next_mode;
++	/** Options for OpenSBI library */
++	unsigned long options;
++	/**
++	* Preferred boot HART id
++	*
++	* It is possible that the previous booting stage uses same link
++	* address as the FW_DYNAMIC firmware. In this case, the relocation
++	* lottery mechanism can potentially overwrite the previous booting
++	* stage while other HARTs are still running in the previous booting
++	* stage leading to boot-time crash. To avoid this boot-time crash,
++	* the previous booting stage can specify last HART that will jump
++	* to the FW_DYNAMIC firmware as the preferred boot HART.
++	*
++	* To avoid specifying a preferred boot HART, the previous booting
++	* stage can set it to -1UL which will force the FW_DYNAMIC firmware
++	* to use the relocation lottery mechanism.
++	*/
++	unsigned long boot_hart;
++} __packed;
++
++#endif
+-- 
+2.7.4
+
